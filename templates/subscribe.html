@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Subscribe to Alerts - CityGuard AI{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h3 class="mb-0">
+                        <i data-feather="bell" class="me-2"></i>
+                        Subscribe to Alerts
+                    </h3>
+                    <p class="text-muted mt-2">Get instant notifications for critical incidents in your area</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('subscribe') }}">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i data-feather="user" class="me-1"></i>
+                                Your Name
+                            </label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <small class="form-text text-muted">This helps us personalize your alerts</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i data-feather="mail" class="me-1"></i>
+                                Email Address
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <small class="form-text text-muted">We'll send critical alerts to this email</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="location" class="form-label">
+                                <i data-feather="map-pin" class="me-1"></i>
+                                Your Location
+                            </label>
+                            <input type="text" class="form-control" id="location" name="location" 
+                                   placeholder="e.g., New York, Los Angeles, Chicago" required>
+                            <small class="form-text text-muted">We'll monitor incidents in and around this area</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i data-feather="info" class="me-1"></i>
+                                        What you'll receive:
+                                    </h6>
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-1">
+                                            <span class="badge bg-danger me-2">Critical</span>
+                                            Emergency situations requiring immediate attention
+                                        </li>
+                                        <li class="mb-1">
+                                            <span class="badge bg-warning text-dark me-2">High</span>
+                                            Severe weather warnings and major incidents
+                                        </li>
+                                        <li class="mb-0">
+                                            <span class="badge bg-info me-2">Medium</span>
+                                            Traffic disruptions and general safety alerts
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i data-feather="check" class="me-1"></i>
+                                Subscribe to Alerts
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i data-feather="shield" class="me-1"></i>
+                            Your privacy is protected. We only send verified, relevant alerts.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i data-feather="arrow-left" class="me-1"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Modal -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Subscription Result</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Result message will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize feather icons
+    feather.replace();
+    
+    // Auto-focus on first input
+    document.getElementById('username').focus();
+    
+    // Add some client-side validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const email = document.getElementById('email').value;
+        const location = document.getElementById('location').value;
+        
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            e.preventDefault();
+            alert('Please enter a valid email address.');
+            return;
+        }
+        
+        // Location validation
+        if (location.length < 2) {
+            e.preventDefault();
+            alert('Please enter a valid location.');
+            return;
+        }
+    });
+</script>
+{% endblock %}

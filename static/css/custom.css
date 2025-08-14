@@ -1,0 +1,204 @@
+/* Custom CSS for CityGuard AI Dashboard */
+
+/* Incident Cards */
+.incident-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 4px solid var(--bs-primary);
+}
+
+.incident-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Severity-based left border colors */
+.incident-card[data-severity="critical"] {
+    border-left-color: var(--bs-danger);
+}
+
+.incident-card[data-severity="high"] {
+    border-left-color: var(--bs-warning);
+}
+
+.incident-card[data-severity="medium"] {
+    border-left-color: var(--bs-info);
+}
+
+.incident-card[data-severity="low"] {
+    border-left-color: var(--bs-success);
+}
+
+/* Stats Cards */
+.card.bg-primary,
+.card.bg-danger,
+.card.bg-warning,
+.card.bg-info {
+    color: white;
+    transition: transform 0.2s ease;
+}
+
+.card.bg-primary:hover,
+.card.bg-danger:hover,
+.card.bg-warning:hover,
+.card.bg-info:hover {
+    transform: scale(1.02);
+}
+
+/* Loading States */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Custom button styles */
+.btn-refresh {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-refresh:active {
+    transform: scale(0.98);
+}
+
+/* Modal enhancements */
+.modal-content {
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Timeline styling */
+.timeline-item {
+    padding: 1rem 0;
+    border-left: 2px solid var(--bs-gray-300);
+    padding-left: 1.5rem;
+    margin-left: 1rem;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 1.5rem;
+    width: 10px;
+    height: 10px;
+    background-color: var(--bs-primary);
+    border-radius: 50%;
+}
+
+/* Alert customizations */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+/* Navigation enhancements */
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+/* Footer styling */
+footer {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .display-6 {
+        font-size: 1.5rem;
+    }
+    
+    .incident-card .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* Animation classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+/* Status indicators */
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.active {
+    background-color: var(--bs-success);
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.warning {
+    background-color: var(--bs-warning);
+}
+
+.status-indicator.danger {
+    background-color: var(--bs-danger);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Dark theme enhancements */
+[data-bs-theme="dark"] .card {
+    background-color: var(--bs-gray-900);
+    border-color: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .incident-card:hover {
+    background-color: var(--bs-gray-800);
+}
+
+[data-bs-theme="dark"] .modal-content {
+    background-color: var(--bs-gray-900);
+    border-color: var(--bs-gray-700);
+}
+
+/* Accessibility improvements */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    footer,
+    .btn,
+    .modal {
+        display: none !important;
+    }
+    
+    .incident-card {
+        break-inside: avoid;
+        margin-bottom: 1rem;
+    }
+}
