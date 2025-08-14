@@ -41,7 +41,7 @@ CityGuard AI is a comprehensive real-time local incident monitoring and alert sy
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/AishwaryaChandel27/CityGuardAlert
    cd cityguard-ai
    ```
 
