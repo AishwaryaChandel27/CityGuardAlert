@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block title %}Weather Alerts - CityGuard AI{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-2">
+                        <i data-feather="cloud-rain" class="me-2"></i>
+                        Weather Alerts
+                    </h1>
+                    <p class="text-muted">Real-time weather warnings and severe weather monitoring</p>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-outline-primary" onclick="refreshWeatherData()">
+                        <i data-feather="refresh-cw" class="me-1"></i>
+                        Refresh Weather
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weather Statistics -->
+    <div class="row mb-4" id="weather-stats">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info">
+                <div class="card-body text-center">
+                    <i data-feather="cloud" class="mb-2" style="width: 2rem; height: 2rem;"></i>
+                    <h4 id="total-weather-alerts" class="mb-1">-</h4>
+                    <small>Total Weather Alerts</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-danger">
+                <div class="card-body text-center">
+                    <i data-feather="alert-triangle" class="mb-2" style="width: 2rem; height: 2rem;"></i>
+                    <h4 id="severe-weather-alerts" class="mb-1">-</h4>
+                    <small>Severe Weather</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning">
+                <div class="card-body text-center">
+                    <i data-feather="wind" class="mb-2" style="width: 2rem; height: 2rem;"></i>
+                    <h4 id="storm-alerts" class="mb-1">-</h4>
+                    <small>Storm Alerts</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary">
+                <div class="card-body text-center">
+                    <i data-feather="thermometer" class="mb-2" style="width: 2rem; height: 2rem;"></i>
+                    <h4 id="temperature-alerts" class="mb-1">-</h4>
+                    <small>Temperature Alerts</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i data-feather="filter" class="me-1"></i>
+                        Filter Weather Alerts
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Severity</label>
+                            <select class="form-select" id="weather-severity-filter" onchange="filterWeatherAlerts()">
+                                <option value="">All Severities</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Weather Type</label>
+                            <select class="form-select" id="weather-type-filter" onchange="filterWeatherAlerts()">
+                                <option value="">All Types</option>
+                                <option value="thunderstorm">Thunderstorm</option>
+                                <option value="rain">Rain</option>
+                                <option value="snow">Snow</option>
+                                <option value="fog">Fog</option>
+                                <option value="wind">Wind</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" class="form-control" id="weather-location-filter" 
+                                   placeholder="Filter by location" onchange="filterWeatherAlerts()">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Time Range</label>
+                            <select class="form-select" id="weather-time-filter" onchange="filterWeatherAlerts()">
+                                <option value="24">Last 24 hours</option>
+                                <option value="12">Last 12 hours</option>
+                                <option value="6">Last 6 hours</option>
+                                <option value="1">Last hour</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weather Alerts List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="cloud-rain" class="me-2"></i>
+                        Active Weather Alerts
+                    </h5>
+                    <span class="badge bg-secondary" id="weather-alert-count">0 alerts</span>
+                </div>
+                <div class="card-body">
+                    <!-- Loading State -->
+                    <div id="weather-loading-state" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading weather alerts...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Loading latest weather data...</p>
+                    </div>
+
+                    <!-- No Weather Alerts State -->
+                    <div id="no-weather-alerts-state" class="text-center py-5" style="display: none;">
+                        <i data-feather="sun" class="mb-3 text-success" style="width: 3rem; height: 3rem;"></i>
+                        <h5>No Active Weather Alerts</h5>
+                        <p class="text-muted">Great weather conditions! No weather alerts for your area.</p>
+                    </div>
+
+                    <!-- Weather Alerts Container -->
+                    <div id="weather-alerts-container">
+                        <!-- Weather alerts will be loaded here via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Weather Conditions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="eye" class="me-2"></i>
+                        Current Weather Conditions
+                    </h5>
+                </div>
+                <div class="card-body" id="current-weather">
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Loading current weather...</span>
+                        </div>
+                        <span class="ms-2">Loading current conditions...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let allWeatherAlerts = [];
+let filteredWeatherAlerts = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadWeatherData();
+    setInterval(loadWeatherData, 5 * 60 * 1000); // Refresh every 5 minutes
+    feather.replace();
+});
+
+async function loadWeatherData() {
+    try {
+        showWeatherLoadingState();
+        
+        // Load weather incidents from API
+        const timeFilter = document.getElementById('weather-time-filter').value || '24';
+        const response = await fetch(`/api/incidents/weather?hours=${timeFilter}&min_relevance=0.1`);
+        const data = await response.json();
+        
+        if (data.success) {
+            allWeatherAlerts = data.incidents;
+            filterWeatherAlerts();
+            updateWeatherStats(allWeatherAlerts);
+            hideWeatherLoadingState();
+        } else {
+            throw new Error(data.error || 'Failed to load weather data');
+        }
+    } catch (error) {
+        console.error('Error loading weather data:', error);
+        hideWeatherLoadingState();
+        showNoWeatherAlertsState();
+    }
+}
+
+function filterWeatherAlerts() {
+    const severityFilter = document.getElementById('weather-severity-filter').value;
+    const typeFilter = document.getElementById('weather-type-filter').value;
+    const locationFilter = document.getElementById('weather-location-filter').value.toLowerCase();
+    
+    filteredWeatherAlerts = allWeatherAlerts.filter(alert => {
+        const matchesSeverity = !severityFilter || alert.severity === severityFilter;
+        const matchesType = !typeFilter || alert.title.toLowerCase().includes(typeFilter);
+        const matchesLocation = !locationFilter || alert.location.toLowerCase().includes(locationFilter);
+        return matchesSeverity && matchesType && matchesLocation;
+    });
+    
+    displayWeatherAlerts(filteredWeatherAlerts);
+    updateWeatherAlertCount(filteredWeatherAlerts.length);
+}
+
+function displayWeatherAlerts(alerts) {
+    const container = document.getElementById('weather-alerts-container');
+    
+    if (alerts.length === 0) {
+        showNoWeatherAlertsState();
+        return;
+    }
+    
+    hideNoWeatherAlertsState();
+    
+    // Sort by severity and date
+    alerts.sort((a, b) => {
+        const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+        const severityDiff = (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
+        if (severityDiff !== 0) return severityDiff;
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
+    
+    container.innerHTML = alerts.map(alert => createWeatherAlertCard(alert)).join('');
+    feather.replace();
+}
+
+function createWeatherAlertCard(alert) {
+    const severityColors = {
+        'low': 'success',
+        'medium': 'info',
+        'high': 'warning',
+        'critical': 'danger'
+    };
+    
+    const severityColor = severityColors[alert.severity] || 'secondary';
+    const timeAgo = getTimeAgo(alert.created_at);
+    
+    const weatherIcon = getWeatherIcon(alert.title);
+    
+    return `
+        <div class="card mb-3 weather-alert-card border-${severityColor}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="${weatherIcon}" class="me-2 text-${severityColor}"></i>
+                        <span class="badge bg-${severityColor} me-2">${alert.severity.toUpperCase()}</span>
+                        <small class="text-muted">WEATHER ALERT</small>
+                    </div>
+                    <small class="text-muted">${timeAgo}</small>
+                </div>
+                
+                <h6 class="card-title">${escapeHtml(alert.title)}</h6>
+                
+                <p class="card-text text-muted mb-2">
+                    ${escapeHtml(alert.ai_summary || alert.description).substring(0, 200)}${(alert.ai_summary || alert.description).length > 200 ? '...' : ''}
+                </p>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i data-feather="map-pin" class="me-1" style="width: 16px; height: 16px;"></i>
+                        <small class="text-muted">${escapeHtml(alert.location)}</small>
+                        <span class="mx-2">•</span>
+                        <small class="text-muted">Relevance: ${Math.round((alert.relevance_score || 0) * 100)}%</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="showWeatherAlertDetails(${alert.id})">
+                        <i data-feather="eye" class="me-1" style="width: 14px; height: 14px;"></i>
+                        View Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getWeatherIcon(title) {
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes('rain') || titleLower.includes('drizzle')) return 'cloud-rain';
+    if (titleLower.includes('snow')) return 'cloud-snow';
+    if (titleLower.includes('storm') || titleLower.includes('thunder')) return 'zap';
+    if (titleLower.includes('wind')) return 'wind';
+    if (titleLower.includes('fog') || titleLower.includes('mist')) return 'cloud';
+    if (titleLower.includes('sun') || titleLower.includes('clear')) return 'sun';
+    return 'cloud';
+}
+
+function updateWeatherStats(alerts) {
+    const totalAlerts = alerts.length;
+    const severeAlerts = alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length;
+    const stormAlerts = alerts.filter(a => a.title.toLowerCase().includes('storm') || a.title.toLowerCase().includes('thunder')).length;
+    const tempAlerts = alerts.filter(a => a.title.toLowerCase().includes('temperature') || a.title.toLowerCase().includes('heat') || a.title.toLowerCase().includes('cold')).length;
+    
+    document.getElementById('total-weather-alerts').textContent = totalAlerts;
+    document.getElementById('severe-weather-alerts').textContent = severeAlerts;
+    document.getElementById('storm-alerts').textContent = stormAlerts;
+    document.getElementById('temperature-alerts').textContent = tempAlerts;
+}
+
+function refreshWeatherData() {
+    loadWeatherData();
+}
+
+function showWeatherLoadingState() {
+    document.getElementById('weather-loading-state').style.display = 'block';
+    document.getElementById('no-weather-alerts-state').style.display = 'none';
+    document.getElementById('weather-alerts-container').innerHTML = '';
+}
+
+function hideWeatherLoadingState() {
+    document.getElementById('weather-loading-state').style.display = 'none';
+}
+
+function showNoWeatherAlertsState() {
+    document.getElementById('no-weather-alerts-state').style.display = 'block';
+    document.getElementById('weather-alerts-container').innerHTML = '';
+}
+
+function hideNoWeatherAlertsState() {
+    document.getElementById('no-weather-alerts-state').style.display = 'none';
+}
+
+function updateWeatherAlertCount(count) {
+    document.getElementById('weather-alert-count').textContent = `${count} alert${count !== 1 ? 's' : ''}`;
+}
+
+async function showWeatherAlertDetails(alertId) {
+    try {
+        const response = await fetch(`/api/incidents/${alertId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            // Use existing modal from base template or create inline display
+            alert(`Weather Alert Details:\n\n${data.incident.title}\n\n${data.incident.ai_summary || data.incident.description}`);
+        }
+    } catch (error) {
+        console.error('Error loading weather alert details:', error);
+        alert('Error loading alert details. Please try again.');
+    }
+}
+
+// Utility functions
+function getTimeAgo(dateString) {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

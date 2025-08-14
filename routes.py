@@ -91,6 +91,97 @@ def get_incidents_by_severity(severity):
             'error': 'Failed to fetch incidents'
         }), 500
 
+@app.route('/weather')
+def weather():
+    """Weather alerts page"""
+    return render_template('weather.html')
+
+@app.route('/news')
+def news():
+    """News alerts page"""
+    return render_template('news.html')
+
+@app.route('/map')
+def map():
+    """Interactive map page"""
+    return render_template('map.html')
+
+@app.route('/api/incidents/weather')
+def get_weather_incidents():
+    """API endpoint to get weather-specific incidents"""
+    try:
+        hours = request.args.get('hours', 24, type=int)
+        min_relevance = request.args.get('min_relevance', 0.3, type=float)
+        
+        from datetime import datetime, timedelta
+        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+        
+        incidents = Incident.query.filter(
+            Incident.created_at >= cutoff_time,
+            Incident.source == 'weather',
+            Incident.relevance_score >= min_relevance,
+            Incident.is_verified == True
+        ).order_by(
+            Incident.relevance_score.desc(),
+            Incident.created_at.desc()
+        ).all()
+        
+        incidents_data = [incident.to_dict() for incident in incidents]
+        
+        return jsonify({
+            'success': True,
+            'incidents': incidents_data,
+            'count': len(incidents_data),
+            'source': 'weather'
+        })
+        
+    except Exception as e:
+        logging.error(f"Error fetching weather incidents: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch weather incidents',
+            'incidents': [],
+            'count': 0
+        }), 500
+
+@app.route('/api/incidents/news')
+def get_news_incidents():
+    """API endpoint to get news-specific incidents"""
+    try:
+        hours = request.args.get('hours', 24, type=int)
+        min_relevance = request.args.get('min_relevance', 0.3, type=float)
+        
+        from datetime import datetime, timedelta
+        cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+        
+        incidents = Incident.query.filter(
+            Incident.created_at >= cutoff_time,
+            Incident.source == 'news',
+            Incident.relevance_score >= min_relevance,
+            Incident.is_verified == True
+        ).order_by(
+            Incident.relevance_score.desc(),
+            Incident.created_at.desc()
+        ).all()
+        
+        incidents_data = [incident.to_dict() for incident in incidents]
+        
+        return jsonify({
+            'success': True,
+            'incidents': incidents_data,
+            'count': len(incidents_data),
+            'source': 'news'
+        })
+        
+    except Exception as e:
+        logging.error(f"Error fetching news incidents: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch news incidents',
+            'incidents': [],
+            'count': 0
+        }), 500
+
 @app.route('/subscribe', methods=['GET', 'POST'])
 def subscribe():
     """Handle user subscription for email notifications"""

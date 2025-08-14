@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Map - CityGuard AI{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+#map {
+    height: 600px;
+    width: 100%;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.incident-popup {
+    min-width: 250px;
+}
+
+.incident-popup .popup-title {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.incident-popup .popup-severity {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.severity-critical { background-color: #dc3545; color: white; }
+.severity-high { background-color: #fd7e14; color: white; }
+.severity-medium { background-color: #ffc107; color: black; }
+.severity-low { background-color: #28a745; color: white; }
+
+.map-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    max-width: 300px;
+}
+
+.legend {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 mb-2">
+                        <i data-feather="map" class="me-2"></i>
+                        Interactive Incident Map
+                    </h1>
+                    <p class="text-muted">Real-time visualization of weather and news incidents across locations</p>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-outline-primary me-2" onclick="refreshMapData()">
+                        <i data-feather="refresh-cw" class="me-1"></i>
+                        Refresh Map
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="resetMapView()">
+                        <i data-feather="home" class="me-1"></i>
+                        Reset View
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Map Column -->
+        <div class="col-lg-9 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="map-pin" class="me-2"></i>
+                        Incident Locations
+                    </h5>
+                    <span class="badge bg-primary" id="map-incident-count">0 incidents</span>
+                </div>
+                <div class="card-body p-0 position-relative">
+                    <!-- Map Container -->
+                    <div id="map"></div>
+                    
+                    <!-- Map Loading Overlay -->
+                    <div id="map-loading" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background-color: rgba(255,255,255,0.9); z-index: 999;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-2" role="status">
+                                <span class="visually-hidden">Loading map data...</span>
+                            </div>
+                            <p class="text-muted">Loading incident locations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls and Info Column -->
+        <div class="col-lg-3">
+            <!-- Filter Controls -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="sliders" class="me-2"></i>
+                        Map Filters
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Incident Source</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show-weather" checked onchange="filterMapIncidents()">
+                            <label class="form-check-label" for="show-weather">
+                                <i data-feather="cloud" class="me-1" style="width: 16px; height: 16px;"></i>
+                                Weather Alerts
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show-news" checked onchange="filterMapIncidents()">
+                            <label class="form-check-label" for="show-news">
+                                <i data-feather="newspaper" class="me-1" style="width: 16px; height: 16px;"></i>
+                                News Incidents
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Severity Level</label>
+                        <select class="form-select form-select-sm" id="map-severity-filter" onchange="filterMapIncidents()">
+                            <option value="">All Severities</option>
+                            <option value="critical">Critical Only</option>
+                            <option value="high">High & Critical</option>
+                            <option value="medium">Medium & Above</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Time Range</label>
+                        <select class="form-select form-select-sm" id="map-time-filter" onchange="loadMapData()">
+                            <option value="6">Last 6 hours</option>
+                            <option value="12">Last 12 hours</option>
+                            <option value="24" selected>Last 24 hours</option>
+                            <option value="48">Last 48 hours</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Location Search</label>
+                        <input type="text" class="form-control form-control-sm" id="map-location-search" 
+                               placeholder="Search location..." onkeyup="searchLocation(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="info" class="me-2"></i>
+                        Map Legend
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #dc3545;"></div>
+                            <span class="small">Critical Incidents</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #fd7e14;"></div>
+                            <span class="small">High Priority</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #ffc107;"></div>
+                            <span class="small">Medium Priority</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #28a745;"></div>
+                            <span class="small">Low Priority</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="legend-item">
+                            <i data-feather="cloud" class="me-2" style="width: 16px; height: 16px; color: #007bff;"></i>
+                            <span class="small">Weather Alerts</span>
+                        </div>
+                        <div class="legend-item">
+                            <i data-feather="newspaper" class="me-2" style="width: 16px; height: 16px; color: #6c757d;"></i>
+                            <span class="small">News Incidents</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Incidents List -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i data-feather="list" class="me-2"></i>
+                        Recent Incidents
+                    </h6>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    <div id="recent-incidents-list">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+let map;
+let markersLayer;
+let allIncidents = [];
+let filteredIncidents = [];
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMap();
+    loadMapData();
+    feather.replace();
+    
+    // Auto-refresh every 5 minutes
+    setInterval(loadMapData, 5 * 60 * 1000);
+});
+
+function initializeMap() {
+    // Initialize the map centered on New York (can be configured)
+    map = L.map('map').setView([40.7128, -74.0060], 10);
+    
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Initialize markers layer group
+    markersLayer = L.layerGroup().addTo(map);
+    
+    // Hide loading overlay
+    document.getElementById('map-loading').style.display = 'none';
+}
+
+async function loadMapData() {
+    try {
+        showMapLoading();
+        
+        const timeFilter = document.getElementById('map-time-filter').value || '24';
+        const response = await fetch(`/api/incidents?hours=${timeFilter}&min_relevance=0.2`);
+        const data = await response.json();
+        
+        if (data.success) {
+            allIncidents = data.incidents;
+            filterMapIncidents();
+            updateRecentIncidentsList();
+            hideMapLoading();
+        } else {
+            throw new Error(data.error || 'Failed to load map data');
+        }
+    } catch (error) {
+        console.error('Error loading map data:', error);
+        hideMapLoading();
+    }
+}
+
+function filterMapIncidents() {
+    const showWeather = document.getElementById('show-weather').checked;
+    const showNews = document.getElementById('show-news').checked;
+    const severityFilter = document.getElementById('map-severity-filter').value;
+    
+    filteredIncidents = allIncidents.filter(incident => {
+        // Source filter
+        const matchesSource = (showWeather && incident.source === 'weather') || 
+                            (showNews && incident.source === 'news');
+        
+        if (!matchesSource) return false;
+        
+        // Severity filter
+        if (severityFilter) {
+            const severityLevels = { low: 1, medium: 2, high: 3, critical: 4 };
+            const incidentLevel = severityLevels[incident.severity] || 1;
+            const filterLevel = severityLevels[severityFilter] || 1;
+            
+            if (severityFilter === 'critical') {
+                return incidentLevel === 4;
+            } else if (severityFilter === 'high') {
+                return incidentLevel >= 3;
+            } else if (severityFilter === 'medium') {
+                return incidentLevel >= 2;
+            }
+        }
+        
+        return true;
+    });
+    
+    displayIncidentsOnMap(filteredIncidents);
+    updateMapIncidentCount(filteredIncidents.length);
+}
+
+function displayIncidentsOnMap(incidents) {
+    // Clear existing markers
+    markersLayer.clearLayers();
+    
+    incidents.forEach(incident => {
+        // Try to get coordinates (in real app, you'd geocode the location)
+        const coordinates = getCoordinatesForLocation(incident.location);
+        
+        if (coordinates) {
+            const marker = createIncidentMarker(incident, coordinates);
+            markersLayer.addLayer(marker);
+        }
+    });
+}
+
+function getCoordinatesForLocation(location) {
+    // Simple location mapping - in production, you'd use a geocoding service
+    const locationMap = {
+        'New York': [40.7128, -74.0060],
+        'Los Angeles': [34.0522, -118.2437],
+        'Chicago': [41.8781, -87.6298],
+        'Houston': [29.7604, -95.3698],
+        'Phoenix': [33.4484, -112.0740],
+        'Philadelphia': [39.9526, -75.1652],
+        'San Antonio': [29.4241, -98.4936],
+        'San Diego': [32.7157, -117.1611],
+        'Dallas': [32.7767, -96.7970],
+        'San Jose': [37.3382, -121.8863]
+    };
+    
+    // Look for exact match first
+    if (locationMap[location]) {
+        return locationMap[location];
+    }
+    
+    // Look for partial match
+    for (const [key, coords] of Object.entries(locationMap)) {
+        if (location.toLowerCase().includes(key.toLowerCase()) || 
+            key.toLowerCase().includes(location.toLowerCase())) {
+            return coords;
+        }
+    }
+    
+    // Default to New York if no match found
+    return [40.7128, -74.0060];
+}
+
+function createIncidentMarker(incident, coordinates) {
+    const severityColors = {
+        'low': '#28a745',
+        'medium': '#ffc107',
+        'high': '#fd7e14',
+        'critical': '#dc3545'
+    };
+    
+    const color = severityColors[incident.severity] || '#6c757d';
+    const sourceIcon = incident.source === 'weather' ? '☁️' : '📰';
+    
+    // Create custom icon
+    const customIcon = L.divIcon({
+        className: 'custom-incident-marker',
+        html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 10px;">${sourceIcon}</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+    });
+    
+    // Create marker
+    const marker = L.marker(coordinates, { icon: customIcon });
+    
+    // Create popup content
+    const popupContent = `
+        <div class="incident-popup">
+            <div class="popup-title">${escapeHtml(incident.title)}</div>
+            <span class="popup-severity severity-${incident.severity}">${incident.severity.toUpperCase()}</span>
+            <p class="small mb-2">${escapeHtml((incident.ai_summary || incident.description).substring(0, 150))}${(incident.ai_summary || incident.description).length > 150 ? '...' : ''}</p>
+            <div class="d-flex justify-content-between align-items-center small">
+                <span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(incident.location)}</span>
+                <span>${getTimeAgo(incident.created_at)}</span>
+            </div>
+            ${incident.url ? `<div class="mt-2"><a href="${incident.url}" target="_blank" class="btn btn-sm btn-primary">View Source</a></div>` : ''}
+        </div>
+    `;
+    
+    marker.bindPopup(popupContent, { maxWidth: 300 });
+    
+    return marker;
+}
+
+function updateRecentIncidentsList() {
+    const container = document.getElementById('recent-incidents-list');
+    
+    if (filteredIncidents.length === 0) {
+        container.innerHTML = '<div class="text-center py-3 text-muted">No incidents to display</div>';
+        return;
+    }
+    
+    // Get most recent incidents
+    const recentIncidents = [...filteredIncidents]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 10);
+    
+    container.innerHTML = recentIncidents.map(incident => `
+        <div class="border-bottom pb-2 mb-2 small" onclick="focusOnIncident('${incident.location}')">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <div class="fw-bold">${escapeHtml(incident.title.substring(0, 60))}${incident.title.length > 60 ? '...' : ''}</div>
+                    <div class="text-muted">
+                        <i data-feather="${incident.source === 'weather' ? 'cloud' : 'newspaper'}" style="width: 12px; height: 12px;"></i>
+                        ${incident.location} • ${getTimeAgo(incident.created_at)}
+                    </div>
+                </div>
+                <span class="badge bg-${getSeverityColor(incident.severity)} ms-2">${incident.severity}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    feather.replace();
+}
+
+function focusOnIncident(location) {
+    const coordinates = getCoordinatesForLocation(location);
+    if (coordinates) {
+        map.setView(coordinates, 13);
+    }
+}
+
+function searchLocation(query) {
+    if (query.length < 2) return;
+    
+    // Simple location search - filter incidents by location
+    const matchingIncidents = filteredIncidents.filter(incident =>
+        incident.location.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    if (matchingIncidents.length > 0) {
+        const firstMatch = matchingIncidents[0];
+        const coordinates = getCoordinatesForLocation(firstMatch.location);
+        if (coordinates) {
+            map.setView(coordinates, 12);
+        }
+    }
+}
+
+function refreshMapData() {
+    loadMapData();
+}
+
+function resetMapView() {
+    map.setView([40.7128, -74.0060], 10);
+}
+
+function showMapLoading() {
+    document.getElementById('map-loading').style.display = 'flex';
+}
+
+function hideMapLoading() {
+    document.getElementById('map-loading').style.display = 'none';
+}
+
+function updateMapIncidentCount(count) {
+    document.getElementById('map-incident-count').textContent = `${count} incident${count !== 1 ? 's' : ''}`;
+}
+
+function getSeverityColor(severity) {
+    const colors = {
+        'low': 'success',
+        'medium': 'warning',
+        'high': 'warning',
+        'critical': 'danger'
+    };
+    return colors[severity] || 'secondary';
+}
+
+// Utility functions
+function getTimeAgo(dateString) {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

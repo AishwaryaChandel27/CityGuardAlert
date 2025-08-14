@@ -11,9 +11,15 @@ Preferred communication style: Simple, everyday language.
 ## Frontend Architecture
 The application uses a traditional server-rendered architecture with Flask templates and Bootstrap for styling. The frontend consists of:
 - **Template System**: Jinja2 templates with a base layout (`base.html`) providing consistent navigation and styling
-- **Dashboard Interface**: Real-time incident display with JavaScript-powered updates and filtering
+- **Multi-Page Interface**: Dedicated pages for different data views:
+  - Main Dashboard (`index.html`): Overview of all incidents with filtering
+  - Weather Alerts (`weather.html`): Specialized weather incident monitoring
+  - News Alerts (`news.html`): Local news incident tracking with breaking news ticker
+  - Interactive Map (`map.html`): Geographic visualization using Leaflet.js
+  - Subscription Management (`subscribe.html`): User registration for email alerts
 - **Bootstrap Integration**: Uses Replit's dark theme variant for consistent UI styling
 - **Progressive Enhancement**: JavaScript enhances the base HTML functionality without being required for core features
+- **Interactive Mapping**: Leaflet.js integration for real-time incident location visualization
 
 ## Backend Architecture
 Built on Flask with a modular agent-based architecture:
